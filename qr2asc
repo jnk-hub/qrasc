@@ -1,0 +1,30 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+	
+    echo "usage: `basename ${0}` <QR image 1> [QR image 2] [...]"
+	exit 1
+fi
+
+chunks=()
+for img in "$@"; do
+	if [ ! -f "${img}" ]; then
+	
+    	echo "image file not found: '${img}'"
+		exit 1
+	fi
+    chunk=$( zbarimg --raw --set disable --set qrcode.enable "${img}" 2>/dev/null )
+    if [ $? -ne 0 ]; then
+		
+        echo "failed to decode QR image"
+		exit 2
+	fi
+    chunks+=("${chunk}")
+done
+
+key=""
+for c in "${chunks[@]}"; do
+    key+="${c}"
+done
+
+echo "${key}" > key.asc

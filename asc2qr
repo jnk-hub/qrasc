@@ -1,0 +1,40 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+	
+    echo "usage: `basename ${0}` <ascii armor key file>"
+	exit 1
+fi
+
+key=${1}
+if [ ! -f "${key}" ]; then
+	
+    echo "key file not found: '${key}'"
+	exit 1
+fi
+
+# maxBytes is maximum chuck size to send to the QR encoder.
+# QR version 40 supports 2,953 bytes of storage.
+maxBytes=2800
+
+chunks=()
+while true; do
+    read -r -d'\0' -n ${maxBytes} s
+    if [ ${#s} -gt 0 ]; then
+        chunks+=("${s}")
+    else
+        break
+    fi
+done < ${key}
+
+index=1
+for c in "${chunks[@]}"; do
+    img="`basename ${key}`-${index}.qr.png"
+    echo -n "${c}" | qrencode -o ${img}
+	if [ $? -ne 0 ]; then
+		
+        echo "failed to encode image"
+		exit 2
+	fi
+    index=$((index+1))
+done
